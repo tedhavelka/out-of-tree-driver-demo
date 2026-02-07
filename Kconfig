@@ -1,0 +1,6 @@
+# Kionix driver demo
+# Neela Nurseries (c) 2021 - 2026
+
+mainmenu "Kionix Zephyr Driver Demo"
+
+source "Kconfig.zephyr"

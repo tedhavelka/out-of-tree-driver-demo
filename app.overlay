@@ -1,0 +1,12 @@
+/*
+ * 2026 Q1 KX132 driver work
+ */
+
+&i2c0 {
+	clock-frequency = <DT_FREQ_K(100)>;
+	kionix_sensor: kx132_1211@1f {
+		compatible = "kionix,kx132";
+		reg = <0x1F>;
+		drdy-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+	};
+};
