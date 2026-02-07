@@ -1,0 +1,7 @@
+ExitOnError 1
+r
+loadfile "/home/ted/projects/container-based/v2-driver/build/zephyr/zephyr.bin" 0x10000000
+g
+writeDP 1 0 
+readDP 1
+q
