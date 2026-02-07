@@ -1,0 +1,37 @@
+{
+    "name": "v2-driver",
+    "build": {
+        "dockerfile": "./Dockerfile",
+        "context": "."
+    },
+    "features": {
+        "ghcr.io/devcontainers-community/features/llvm": {
+            "version": "20"
+        },
+        "ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {},
+        "ghcr.io/bascodes/devcontainer-features/usbutils:1": {},
+        "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+            // comma-separated list
+            "packages": "gdb" // install gdb for local debugging
+        }
+    },
+    "postCreateCommand": {
+        "python-deps": "sudo $PYTHON_VENV_PATH/bin/python -m pip install -r requirements.txt",
+        "post-create": "./.devcontainer/post-create.sh"
+    },
+    "runArgs": [
+        "--privileged",
+        "--label=v2-driver-devcontainer"
+    ],
+    "containerEnv": {
+        "DISPLAY": "${localEnv:DISPLAY}",
+        "SSH_AUTH_SOCK": "/ssh-agent"
+    },
+    "mounts": [
+        "source=${localWorkspaceFolder}/docker_cache,target=/workdir,type=bind,consistency=cached",
+        "source=/dev,target=/dev,type=bind"
+    ],
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workdir/v2-driver,type=bind,consistency=cached",
+    "workspaceFolder": "/workdir/v2-driver",
+    "remoteUser": "user"
+}
