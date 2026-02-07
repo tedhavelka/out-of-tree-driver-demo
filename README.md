@@ -1,6 +1,6 @@
 # Out-Of-Tree Driver Demo
 
-Small Zephyr RTOS app to exercise an out-of-tree driver.  This worked licensed
+Small Zephyr RTOS app to exercise an out-of-tree driver.  This work licensed
 under MIT licence.
 
 This demo as of 2026-02-06 specifies a Zephyr out-of-tree driver for Rohm
