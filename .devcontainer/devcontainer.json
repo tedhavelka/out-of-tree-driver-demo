@@ -1,5 +1,5 @@
 {
-    "name": "v2-driver",
+    "name": "out-of-tree-driver-demo",
     "build": {
         "dockerfile": "./Dockerfile",
         "context": "."
@@ -16,12 +16,11 @@
         }
     },
     "postCreateCommand": {
-        "python-deps": "sudo $PYTHON_VENV_PATH/bin/python -m pip install -r requirements.txt",
         "post-create": "./.devcontainer/post-create.sh"
     },
     "runArgs": [
         "--privileged",
-        "--label=v2-driver-devcontainer"
+        "--label=out-of-tree-driver-demo-devcontainer"
     ],
     "containerEnv": {
         "DISPLAY": "${localEnv:DISPLAY}",
@@ -31,7 +30,7 @@
         "source=${localWorkspaceFolder}/docker_cache,target=/workdir,type=bind,consistency=cached",
         "source=/dev,target=/dev,type=bind"
     ],
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workdir/v2-driver,type=bind,consistency=cached",
-    "workspaceFolder": "/workdir/v2-driver",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workdir/out-of-tree-driver-demo,type=bind,consistency=cached",
+    "workspaceFolder": "/workdir/out-of-tree-driver-demo",
     "remoteUser": "user"
 }

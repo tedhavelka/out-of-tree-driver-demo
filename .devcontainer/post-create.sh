@@ -17,10 +17,12 @@ setup() {
         echo "West already initialized."
     fi
 
+    # Note this final section of `setup()` follows Zephyr 4.3.0 "Getting
+    # Started" instructions at the Zephyr Project RTOS documentation site.
     echo "Adding extra modules and calling \`west\` to update SDK..."
-    west config manifest.project-filter -- +nanopb
     west update
     west zephyr-export
+    west packages pip --install
     ./scripts/placeholder.sh
     complete_setup
 }

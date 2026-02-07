@@ -60,6 +60,7 @@ RUN apt-get update && \
         sudo \
         wget \
         vim \
+        tree \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
