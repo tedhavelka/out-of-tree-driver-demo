@@ -23,7 +23,7 @@ manifest:
     - name: kionix-drivers
       path: kionix-drivers
       revision: main
-      url: git@github.com:tedhavelka/kionix-drivers.git
+      url: https://github.com/tedhavelka/kionix-drivers
 
   self:
     # This repository should be cloned to 
