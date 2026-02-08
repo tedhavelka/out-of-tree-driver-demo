@@ -106,10 +106,82 @@ There may be only one ruling manifest in a given Zephyr workspace.
 This project includes a dot devcontainer directory and files, but they're not
 yet fully functional.
 
-These devcontainer scripts have worked successfully on two localhosts, but not
+For container based builds, the demo and its container scripts require three
+steps to reach a point of project building:
+
+_Sequence of local post-git-clone steps_
+
+(1) clone this repo
+
+(2) in the demo demo repository invoke `./scripts/devcontainer-helper.sh`
+
+(3) in same placed invoke `scripts/start-container.sh`
+
+The "first draft" container recipe defines a container which must be used
+interactively to carry out a demo app build.  While it is possible and common
+to define containers which accept specific commands and run non-interactively,
+such a configuration is not a part of this project.
+
+Assuming scripts (1) and (2) succeed, script number (3) starts a container
+running based on the image created by script (2).
+
+A running container opens a shell prompt with current directory set to the
+top-level dir of the demo app.  From this point a developer may build the
+demo with:
+
+```shell
+$ west build -b rpi_pico -p
+```
+
+**Warning** The device tree `app.overlay` file is specific to the hardware of
+the RPi Pico.  Developers who need build for other target boards may need to
+modify this DTS overlay file, to reflect GPIO, node labels and other hardware
+details which may differ from those of the RPi Pico.
+
+There is a way to create a `boards` directory in a project like this one,
+and to populate that directory with various target board overlay files.  This
+project structure and feature hasn't yet been added.
+
+### How To Flash
+
+Flashing firmware is not supported by the container which accompanies this
+demo app.  Flashing in any case tends to vary between target hardware, so that
+toolchain element is omitted to keep this work smaller and focused during its
+early stages.
+
+This said, some of the boards supported by Zephyr RTOS can be flashed with the
+commercial programmer/debugger by Segger JLink.  Many of Zephyr's supported
+boards may be flashed using `openocd`.  In the case of RPi Pico, this board
+can be put into a bootloader mode which makes it appear as a block device.  In
+this mode a firmware image in the format `.uf2` may be copied to the device
+representation (typicall appears temporarily as `/media/$USER/RPI-RP2` on Linux
+hosts), or dragged and dropped using a graphical file manager under Linux
+
+As of 2026 Q1 flashing details are left to the developer to set up.
+
+### Currently Broken / Unproven Container Set Up
+
+The above devcontainer scripts have worked successfully on two localhosts, but not
 following a `git clone` of this project onto a host with no pre-existing
 workspace.  They are present in the midst of development as they're needed in
 order to be exercised and issues debugged.
 
 A more experienced Docker and Devcontainer developer may be able to make use of
 these as they are today.
+
+## Devcontainer Dependencies
+
+**Note this section in progress.  NOT COMPLETE!**
+
+Host systems tested:  Ubuntu 24.04
+
+Package dependencies noted (this list not verified complete):
+
+```
+[ ] docker-ce
+[ ] docker-ce-cli
+[ ] npm
+```
+
+Further and final dependencies and set up steps for Devcontainer are detailed at
+https://github.com/devcontainers/cli.
