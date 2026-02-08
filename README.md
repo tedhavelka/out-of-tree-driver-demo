@@ -10,6 +10,42 @@ company's MEMs based KX132-1211 accelerometer.  Please note:
 registers and functionality not yet implemented.  Work is underway on this code
 base but THIS CODE IS NOT INTENDED FOR ANY KIND OF PRODUCTION USE.**
 
+## Driver Functionality (2026 Q1)
+
+The KX132 driver referenced and called by this demo currently:
+
+(1) queries and shows manufacturer's four byte id, spells out "Kion"
+
+(2) reads immediate x, y, z acceleration values in their raw A-to-D counts
+
+## Tested Hardware
+
+The demo app has been compiled for and flashed to an RPi Pico board.  The
+board is wired . . .
+
+```
+                                +-----+
+                                |FTDI |
+ 3V3                    3V3     +-----+                     3V3
+  ^                      ^        |||                        ^
+  |  +---------------+   |        |||  +----------------+    |
+  |  |     KX132     |   |        |||  |    RPi Pico    |    |
+  +--| ADR       GND |---|----+   ||+--| TX0            |    |
+     |           3V3 |---+    |   |+---| RX0            |    |
+     |          SDA0 |-----+  V   +----| GND        GND |-+  |
+     |          SCL0 |---+ |           |                | |  |
+     |               |   | |           |            3V3 |----+
+     +---------------+   | +-----------| SDA0           | |
+                         +-------------| SCL0           | V
+                                       |                |
+                                       |                |
+                                       |                |
+                                       |                |
+                                       +----------------+
+```
+
+
+
 ## To Configure A Build Environment
 
 There are a couple of general ways to configure a Zephyr build environment,
