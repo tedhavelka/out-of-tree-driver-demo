@@ -154,7 +154,7 @@ commercial programmer/debugger by Segger JLink.  Many of Zephyr's supported
 boards may be flashed using `openocd`.  In the case of RPi Pico, this board
 can be put into a bootloader mode which makes it appear as a block device.  In
 this mode a firmware image in the format `.uf2` may be copied to the device
-representation (typicall appears temporarily as `/media/$USER/RPI-RP2` on Linux
+representation (typically appears temporarily as `/media/$USER/RPI-RP2` on Linux
 hosts), or dragged and dropped using a graphical file manager under Linux
 
 As of 2026 Q1 flashing details are left to the developer to set up.
