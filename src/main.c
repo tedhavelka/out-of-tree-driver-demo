@@ -38,10 +38,10 @@ LOG_MODULE_REGISTER(demo);
 // - SECTION - file scoped
 //----------------------------------------------------------------------
 
-#define MY_KX132 DT_NODELABEL(kionix_sensor)
+// #define MY_KX132 DT_NODELABEL(kionix_sensor)
 
 #if DT_NODE_HAS_STATUS(MY_KX132, okay)
-const struct device *const kx132_dev = DEVICE_DT_GET(MY_KX132);
+// const struct device *const kx132_dev = DEVICE_DT_GET(MY_KX132);
 #else
 // #error "Node for KX132 is disabled"
 #endif
@@ -59,11 +59,9 @@ union generic_data_four_bytes_union_t {
 int main(void)
 {
 	// sensor related variables
-	struct sensor_value requested_config;
-	// const struct device *const dev_accel0 = DEVICE_DT_GET_ANY(kionix_kx132);
 	const struct device *const dev_accel0 = DEVICE_DT_GET(DT_NODELABEL(kionix_sensor));
-
-	struct sensor_value value;
+	struct sensor_value requested_config;
+	 // struct sensor_value value;
 	union generic_data_four_bytes_union_t data_from_sensor;
 
 	// heartbeat and housekeeping
@@ -131,27 +129,62 @@ int main(void)
 		);
 	}
 
+	requested_config.val1 = SENSOR_ATTR_KIONIX__CONFIG_REG_BUF_CNTL1;
+	requested_config.val2 = 0;
+	rc = sensor_attr_get(dev_accel0,
+		       	SENSOR_CHAN_ALL, // requesting no particular channel, only asking for config
+		       	SENSOR_ATTR_CONFIGURATION,
+		       	&requested_config
+		);
+
+	if (rc == 0) {
+		LOG_INF("- DEV 0223 - register CNTL1 holds 0x%0X", requested_config.val2);
+	} else {
+		LOG_ERR("- DEV 0223 - Failed to read CNTL1 register, err %d", rc);
+	}
+
+	requested_config.val1 = SENSOR_ATTR_KIONIX__STATUS_REG_ODCNTL;
+	requested_config.val2 = 0;
+	rc = sensor_attr_get(dev_accel0,
+		       	SENSOR_CHAN_ALL, // requesting no particular channel, only asking for config
+		       	SENSOR_ATTR_CONFIGURATION,
+		       	&requested_config
+		);
+
+	if (rc == 0) {
+		LOG_INF("- DEV 0223 - register ODCNTL holds 0x%0X", requested_config.val2);
+	} else {
+		LOG_ERR("- DEV 0223 - Failed to read ODCNTL register, err %d", rc);
+	}
+
 	while (1)
 	{
-		if ( DEV_TEST__FETCH_AND_GET_MANUFACTURER_ID )
+		if (DEV_TEST__FETCH_AND_GET_MANUFACTURER_ID)
 		{
-			sensor_sample_fetch_chan(dev_accel0,
-						 SENSOR_CHAN_KIONIX_MANUFACTURER_ID);
-			sensor_channel_get(dev_accel0, SENSOR_CHAN_KIONIX_MANUFACTURER_ID,
-						 &value);
+			requested_config.val1 = KX132_ATTR_MANUFACTURER_ID_STRING;
+			requested_config.val2 = 0;
+       			rc = sensor_attr_get(dev_accel0,
+					SENSOR_CHAN_ALL,
+					SENSOR_ATTR_CONFIGURATION,
+					&requested_config
+					);
 
-			LOG_INF("KX132 manufacturer ID as 32-bit integer %d", value.val1);
-			LOG_INF("sensor_value.val2 holds %d", value.val2);
-			data_from_sensor.as_32_bit_integer = value.val1;
+			LOG_INF("KX132 manufacturer ID as 32-bit integer %d", requested_config.val2);
+			data_from_sensor.as_32_bit_integer = requested_config.val2;
 
-			LOG_INF("value.val1 as bytes:  ");
+			if (rc != 0) {
+				LOG_ERR("- DEV 0223 - failed to read man id string, err %d", rc);
+				goto next_test;
+			}
+
+			LOG_INF("requested_config.val2 as bytes:  ");
 			LOG_INF("  0x%2X 0x%2X 0x%2X 0x%2X",
 				 data_from_sensor.as_bytes[0],
 				 data_from_sensor.as_bytes[1],
 				 data_from_sensor.as_bytes[2],
 				 data_from_sensor.as_bytes[3]
 			);
-			LOG_INF("value.val1 as characters:  '%c %c %c %c'",
+			LOG_INF("requested_config.val2 as characters:  '%c %c %c %c'",
 				 data_from_sensor.as_bytes[0],
 				 data_from_sensor.as_bytes[1],
 				 data_from_sensor.as_bytes[2],
@@ -159,14 +192,25 @@ int main(void)
 			);
 		}
 
-		if ( DEV_TEST__FETCH_AND_GET_PART_ID )
+next_test:
+		if (DEV_TEST__FETCH_AND_GET_PART_ID)
 		{
+#if 0
 			sensor_sample_fetch_chan(dev_accel0, SENSOR_CHAN_KIONIX_PART_ID);
 			sensor_channel_get(dev_accel0, SENSOR_CHAN_KIONIX_PART_ID, &value);
-			LOG_INF("Kionix sensor reports part ID of %d", value.val1);
+#endif // 0
+			requested_config.val1 = KX132_ATTR_PART_ID;
+			requested_config.val2 = 0;
+       			rc = sensor_attr_get(dev_accel0,
+					SENSOR_CHAN_ALL,
+					SENSOR_ATTR_CONFIGURATION,
+					&requested_config
+					);
+			// LOG_INF("Kionix sensor reports part ID of %d", value.val1);
+			LOG_INF("Kionix sensor reports part ID of %d", requested_config.val2);
 		}
 
-		if ( DEV_TEST__FETCH_ACCELEROMETER_READINGS_XYZ )
+		if (DEV_TEST__FETCH_ACCELEROMETER_READINGS_XYZ)
 		{
 			rc = sensor_sample_fetch_chan(dev_accel0,
 							SENSOR_CHAN_ACCEL_XYZ);
