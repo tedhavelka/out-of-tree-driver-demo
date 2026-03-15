@@ -16,11 +16,11 @@
 #warning "- DEV 0315 - about to use `DT_HAS_COMPAT_STATUS_OKAY` . . ."
 #endif 
 
-#if !DT_HAS_COMPAT_STATUS_OKAY(rm3100)
+#if !DT_HAS_COMPAT_STATUS_OKAY(pni_rm3100)
 #warning "- DEV 0315 - Node `rm3100` does not have status set to 'okay'"
 #endif
 
-#if !DT_COMPAT_GET_ANY_STATUS_OKAY(rm3100)
+#if !DT_COMPAT_GET_ANY_STATUS_OKAY(pni_rm3100)
 #warning "- DEV 0315 - No pni,rm3100 compatible node found in the device tree"
 #endif
 
@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define SQ_SZ		(N)
 #define CQ_SZ		(N)
 
-#define NODE_ID		DT_COMPAT_GET_ANY_STATUS_OKAY(rm3100)
+#define NODE_ID		DT_COMPAT_GET_ANY_STATUS_OKAY(pni_rm3100)
 
 // #define SAMPLE_PERIOD	DT_PROP(NODE_ID, sample_period)
 // #define SAMPLE_SIZE	DT_PROP(NODE_ID, sample_size)
