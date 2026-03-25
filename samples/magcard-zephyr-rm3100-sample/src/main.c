@@ -63,11 +63,21 @@ int main(void)
 		LOG_INF("Submitting %d read requests", M);
 		rtio_submit(&ez_io, M);
 
+		// - DEV 0323 -
+#if 0
+		if (ez_io == NULL) {
+		    LOG_ERR("- DEV 0323 - Failed to create RTIO context; `ez-io` is NULL!");
+		} else {
+		    LOG_INF("- DEV 0323 - RTOS context `ez-io` looks good");
+		}
+#endif
+		// - DEV 0323 -
 		/* Consume completion events until there is enough sensor data
 		 * available to execute a batch processing algorithm, such as
 		 * an FFT.
 		 */
 		while (m < M) {
+			LOG_INF("M1"); // DEV 0323
 			struct rtio_cqe *cqe = rtio_cqe_consume(&ez_io);
 
 			if (cqe == NULL) {
