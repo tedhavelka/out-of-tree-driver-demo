@@ -7,8 +7,16 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor_data_types.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/logging/log.h>
+
+#include <stdio.h>
 
 #ifndef DT_HAS_COMPAT_STATUS_OKAY
 #warning "- DEV 0315 - macro `DT_HAS_COMPAT_STATUS_OKAY` not defined"
@@ -41,85 +49,101 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #define PROCESS_TIME	((M - 1) * SAMPLE_PERIOD)
 
-RTIO_DEFINE_WITH_MEMPOOL(ez_io, SQ_SZ, CQ_SZ, N, SAMPLE_SIZE, 4);
+// - DEV 0402 -
+#define READINGS_BUFFER_SIZE 256
+
+#define RM3100_DEMO_SLEEP_TIME_MS 1000
+
+static const struct device *check_rm3100_sensor(const struct device *rm3100_dev)
+{
+	if (rm3100_dev == NULL) {
+		/* No such node, or the node does not have status "okay". */
+		LOG_ERR("\nError: no device found.");
+		return NULL;
+        }
+
+	if (!device_is_ready(rm3100_dev)) {
+		LOG_ERR("\nError: Device \"%s\" is not ready; "
+			"check the driver initialization logs for errors.",
+			rm3100_dev->name);
+		return NULL;
+	}
+
+	LOG_INF("Found device \"%s\", getting sensor data", rm3100_dev->name);
+	return rm3100_dev;
+}
+
+// RTIO_DEFINE_WITH_MEMPOOL(ez_io, SQ_SZ, CQ_SZ, N, SAMPLE_SIZE, 4);
+
+SENSOR_DT_READ_IODEV(iodev, DT_COMPAT_GET_ANY_STATUS_OKAY(pni_rm3100),
+		{SENSOR_CHAN_MAGN_X, 0},
+		{SENSOR_CHAN_MAGN_Y, 0},
+		{SENSOR_CHAN_MAGN_Z, 0},
+		{SENSOR_CHAN_MAGN_XYZ, 0});
+
+RTIO_DEFINE(ctx, 1, 1);
 
 int main(void)
 {
-	const struct device *const mag0 = DEVICE_DT_GET(NODE_ID);
-	struct rtio_iodev *iodev = mag0->data;
+	const struct device *const rm3100_dev = DEVICE_DT_GET(NODE_ID);
+	// struct rtio_iodev *iodev = mag0->data;
+	uint8_t buf[READINGS_BUFFER_SIZE] = {0};
+	static uint32_t loop_count = 1;
+	int32_t rc = 0;
 
-	/* Fill the entire submission queue. */
-	for (int n = 0; n < N; n++) {
-		struct rtio_sqe *sqe = rtio_sqe_acquire(&ez_io);
+	LOG_INF("Starting . . .");
 
-		rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
+	if (check_rm3100_sensor(rm3100_dev) == NULL) {
+		LOG_ERR("Could not find the RM3100");
+		return -ENODEV;
 	}
 
 	while (true) {
-		int m = 0;
-		uint8_t *userdata[M] = {0};
-		uint32_t data_len[M] = {0};
+                rc = sensor_read(&iodev, &ctx, buf, 128);
+                if (rc != 0) {
+                        LOG_ERR("%s: sensor_read() failed: %d", rm3100_dev->name, rc);
+                        break;
+                }
 
-		LOG_INF("Submitting %d read requests", M);
-		rtio_submit(&ez_io, M);
+                const struct sensor_decoder_api *decoder;
 
-		// - DEV 0323 -
-#if 0
-		if (ez_io == NULL) {
-		    LOG_ERR("- DEV 0323 - Failed to create RTIO context; `ez-io` is NULL!");
-		} else {
-		    LOG_INF("- DEV 0323 - RTOS context `ez-io` looks good");
-		}
-#endif
-		// - DEV 0323 -
-		/* Consume completion events until there is enough sensor data
-		 * available to execute a batch processing algorithm, such as
-		 * an FFT.
-		 */
-		while (m < M) {
-			LOG_INF("M1"); // DEV 0323
-			struct rtio_cqe *cqe = rtio_cqe_consume(&ez_io);
+                rc = sensor_get_decoder(rm3100_dev, &decoder);
+                if (rc != 0) {
+                        LOG_ERR("%s: sensor_get_decode() failed: %d", rm3100_dev->name, rc);
+                        break;
+                }
 
-			if (cqe == NULL) {
-				LOG_DBG("No completion events available");
-				k_msleep(SAMPLE_PERIOD);
-				continue;
-			}
-			LOG_DBG("Consumed completion event %d", m);
+                uint32_t mag_x_fit = 0;
+                struct sensor_q31_data mag_x_data = {0};
 
-			if (cqe->result < 0) {
-				LOG_ERR("Operation failed");
-			}
+                decoder->decode(buf, (struct sensor_chan_spec) {SENSOR_CHAN_MAGN_X, 0},
+                                                &mag_x_fit, 1, &mag_x_data);
 
-			if (rtio_cqe_get_mempool_buffer(&ez_io, cqe, &userdata[m], &data_len[m])) {
-				LOG_ERR("Failed to get mempool buffer info");
-			}
-			rtio_cqe_release(&ez_io, cqe);
-			m++;
-		}
+                uint32_t mag_y_fit = 0;
+                struct sensor_q31_data mag_y_data = {0};
 
-		/* Here is where we would execute a batch processing algorithm.
-		 * Model as a long sleep that takes multiple sensor sample
-		 * periods. The sensor driver can continue reading new data
-		 * during this time because we submitted more buffers into the
-		 * queue than we needed for the batch processing algorithm.
-		 */
-		LOG_INF("Start processing %d samples", M);
-		for (m = 0; m < M; m++) {
-			LOG_HEXDUMP_DBG(userdata[m], SAMPLE_SIZE, "Sample data:");
-		}
-		k_msleep(PROCESS_TIME);
-		LOG_INF("Finished processing %d samples", M);
+                decoder->decode(buf, (struct sensor_chan_spec) {SENSOR_CHAN_MAGN_Y, 0},
+                                                &mag_y_fit, 1, &mag_y_data);
 
-		/* Recycle the sensor data buffers and refill the submission
-		 * queue.
-		 */
-		for (m = 0; m < M; m++) {
-			struct rtio_sqe *sqe = rtio_sqe_acquire(&ez_io);
+                uint32_t mag_z_fit = 0;
+                struct sensor_q31_data mag_z_data = {0};
 
-			rtio_release_buffer(&ez_io, userdata[m], data_len[m]);
-			rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
-		}
+                decoder->decode(buf, (struct sensor_chan_spec) {SENSOR_CHAN_MAGN_Z, 0},
+                                                &mag_z_fit, 1, &mag_z_data);
+
+		// See zephyr/include/zephyr/drivers/sensor_data_types.h
+		// for `.value`, `.temperature`, `.humidity` and similar as
+		// they appear as members of the `readings` array:
+		LOG_INF("RM3100 readings (iter %u):  mag_x %s%d.%d mag_y %s%d.%d mag_z %s%d.%d",
+			loop_count,
+			PRIq_arg(mag_x_data.readings[0].value, 6, mag_x_data.shift),
+			PRIq_arg(mag_y_data.readings[0].value, 6, mag_y_data.shift),
+			PRIq_arg(mag_z_data.readings[0].value, 6, mag_z_data.shift));
+
+		k_msleep(RM3100_DEMO_SLEEP_TIME_MS);
+		loop_count++;
 	}
+
+	// Zephyr requires int main() to return 0
 	return 0;
 }
